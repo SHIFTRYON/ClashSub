@@ -1,0 +1,561 @@
+proxies:
+- name: 🇬🇧 28.92 GB | 850 GB
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 'Traffic Reset: 12 Days Left'
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: '🏳️‍🌈 Expire Date: 2026-03-07'
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨02
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨03
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16003
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨04
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16004
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨05
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16005
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨06
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16006
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨07
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16007
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨08
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16008
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨09
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16009
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨10
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨11
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16011
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨12
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16012
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨13
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16013
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨14
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16014
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇭🇰 Hong Kong丨15
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 16015
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨02
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨03
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17003
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨04
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17004
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨05
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17005
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨06
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17006
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨07
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17007
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨08
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17008
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨09
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17009
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇳 Taiwan丨10
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 17010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨02
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨03
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18003
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨04
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18004
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨05
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18005
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨06
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18006
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨07
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18007
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨08
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18008
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨09
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18009
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇸🇬 Singapore丨10
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 18010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨02
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨03
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19003
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨04
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19004
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨05
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19005
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨06
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19006
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨07
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19007
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨08
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19008
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨09
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19009
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇯🇵 Japan丨10
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 19010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨02
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨03
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20003
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨04
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20004
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨05
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20005
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨06
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20006
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨07
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20007
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨08
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20008
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨09
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20009
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇺🇸 United States丨10
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 20010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇰🇷 South Korea丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 21001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇨🇦 Canada丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 22002
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: Great Britain丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 23001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇹🇷 Turkey丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 24001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇮🇳 India丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 25001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇳🇱 Netherlands丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 26001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇫🇷 France | 01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 27001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇩🇪 Germany | 01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 28001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇻🇳 Vietnam | 01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 29001
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇲🇾 Malaysia丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 29010
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇹🇭 Thailand丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 29015
+  type: ss
+  cipher: aes-256-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false
+- name: 🇵🇭 Philippines丨01
+  server: 5TWRDFkQTBoT1R3w.redug8dqjjktoapmdfmqymrvi0iupi.com
+  port: 29020
+  type: ss
+  cipher: aes-128-gcm
+  password: 965e2288-26db-452b-8aa1-77a8990bc7ec
+  udp: true
+  tfo: false

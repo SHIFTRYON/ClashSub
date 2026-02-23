@@ -1,0 +1,39 @@
+  proxies:
+  - name: "🇺🇸 ISP-vless-reality-vision"
+    type: vless
+    server: 192.204.46.121
+    port: 62151
+    uuid: 629d955f-ba3f-480f-826c-8a529f30a8b5
+    network: tcp
+    udp: true
+    tls: true
+    flow: xtls-rprx-vision
+    servername: apple.com
+    reality-opts:
+      public-key: tm4Yik8KngKqt0Iw-88bhlYL878evTJTaoKDwnaGUVI
+      short-id: 5b3094d9
+    client-fingerprint: chrome
+
+  - name: "🇺🇸 Bwh ShadowTLS"
+    type: ss
+    server: 67.230.179.71
+    port: 8884
+    cipher: 2022-blake3-aes-128-gcm
+    password: "88V1doXhxmpCEiwJV7bVUQ=="
+    plugin: shadow-tls
+    client-fingerprint: firefox
+    plugin-opts:
+      host: addons.mozilla.org
+      password: "f90c3a5b-a78f-4be2-b8ee-21b079044057"
+      version: 3
+    smux:
+      enabled: true
+      protocol: h2mux
+      max-connections: 8
+      min-streams: 16
+      padding: true
+      statistic: true
+      only-tcp: false
+      # brutal-opts 在标准 Clash 中通常通过专门的 Hysteria2 或插件实现
+      # 若你的内核支持此字段，可保留：
+      # brutal-opts: { enabled: false, up: 1000, down: 1000 }

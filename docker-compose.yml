@@ -1,0 +1,18 @@
+services:
+  clash-subscription:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clash-subscription
+    restart: unless-stopped
+    ports:
+      - "28033:8000"
+    environment:
+      - TZ=UTC
+    volumes:
+      # Keep runtime config editable on host.
+      - ./configs:/app/configs
+      # Persist generated output files.
+      - ./subscription_raw.yaml:/app/subscription_raw.yaml
+      - ./subscription_output.yaml:/app/subscription_output.yaml
+      - ./subscription_output.json:/app/subscription_output.json
