@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
 Clash Subscription Reader Service
-Fetches a Clash/YAML subscription URL, parses proxy info,
-and can generate merged Clash configs.
+
+Fetches a Clash/YAML subscription URL, merges self-hosted proxies,
+and serves a combined Clash config via a token-protected HTTP endpoint.
 """
+
+from __future__ import annotations
 
 import json
 import os
@@ -15,26 +18,65 @@ from pathlib import Path
 
 import yaml
 
-# Default subscription URL (can be overridden by configs/subscription.yaml)
-DEFAULT_SUB_URL = ()
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+DEFAULT_SUB_URL: str = ""
 DEFAULT_CONFIG_PATH = Path("configs/subscription.yaml")
 LOCAL_CONFIG_PATH = Path("configs/subscription.local.yaml")
 RUNTIME_OUTPUT_DIR = Path("outputs")
-DEFAULT_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
+DEFAULT_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60  # 6 hours
 DEFAULT_KEYWORD = "United States"
 
-HEADERS = {
+FETCH_HEADERS = {
     "User-Agent": "ClashForWindows/0.20.39",
     "Accept": "*/*",
 }
 
+# Proxy-group names that must always route through US-ISP only.
+_AI_GOOGLE_GROUPS = {"🤖 AI & Google", "▶️ YouTube"}
+
+# Rule keywords whose target should be forced to US-ISP.
+_US_ISP_RULE_KEYWORDS = (
+    "geosite,youtube",
+    "rule-set,google",
+    "rule-set,gemini",
+    "rule-set,openai",
+    "rule-set,claude",
+    "gemini.google.com",
+    "bard.google.com",
+    "ai.google.dev",
+    "makersuite.google.com",
+    "alkalimakersuite-pa.clients6.google.com",
+    "deepmind.com",
+    "deepmind.google",
+    "generativeai.google",
+    "proactivebackend-pa.googleapis.com",
+    "apis.google.com",
+    "openai",
+    "chatgpt.com",
+    "oaiusercontent.com",
+    "anthropic.com",
+    "claude.ai",
+    "generativelanguage",
+    "cursor.sh",
+    "cursor.com",
+    "cursorapi.com",
+)
+
+
+# ---------------------------------------------------------------------------
+# Config helpers
+# ---------------------------------------------------------------------------
+
 
 def resolve_runtime_config_path() -> Path:
     """
-    Resolve runtime config path with precedence:
-    1) SUBSCRIPTION_CONFIG env var
-    2) configs/subscription.local.yaml (git-ignored local secrets)
-    3) configs/subscription.yaml (tracked template/default)
+    Config path precedence:
+      1. SUBSCRIPTION_CONFIG env var
+      2. configs/subscription.local.yaml  (git-ignored secrets)
+      3. configs/subscription.yaml        (tracked template/default)
     """
     env_path = os.getenv("SUBSCRIPTION_CONFIG", "").strip()
     if env_path:
@@ -44,368 +86,306 @@ def resolve_runtime_config_path() -> Path:
     return DEFAULT_CONFIG_PATH
 
 
-def load_runtime_config(config_path: str | Path | None = None) -> dict:
-    """Load runtime config values from YAML file."""
-    path = Path(config_path) if config_path else resolve_runtime_config_path()
+def _load_runtime_config(config_path: Path | None = None) -> dict:
+    path = config_path or resolve_runtime_config_path()
     if not path.exists():
         return {}
-    data = read_yaml_file(path)
+    data = _read_yaml(path)
     return data if isinstance(data, dict) else {}
 
 
-def get_sub_url(config_path: str | Path | None = None) -> str:
-    """Resolve subscription URL from config file or fallback."""
-    runtime_cfg = load_runtime_config(config_path)
-    sub_url = runtime_cfg.get("sub_url", DEFAULT_SUB_URL)
-    if not isinstance(sub_url, str) or not sub_url.strip():
-        raise ValueError("Invalid 'sub_url' in config; expected non-empty string.")
-    return sub_url.strip()
+def get_sub_url(config_path: Path | None = None) -> str:
+    url = _load_runtime_config(config_path).get("sub_url", DEFAULT_SUB_URL)
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("'sub_url' in config must be a non-empty string.")
+    return url.strip()
 
 
-def get_access_token(config_path: str | Path | None = None) -> str:
-    """Read access token for protecting public subscription endpoint."""
-    runtime_cfg = load_runtime_config(config_path)
-    token = runtime_cfg.get("access_token")
+def get_access_token(config_path: Path | None = None) -> str:
+    token = _load_runtime_config(config_path).get("access_token", "")
     if not isinstance(token, str) or not token.strip():
-        raise ValueError("Invalid 'access_token' in config; expected non-empty string.")
+        raise ValueError("'access_token' in config must be a non-empty string.")
     return token.strip()
 
 
-def ensure_parent_dir(path: str | Path):
-    """Create parent directory for a file path if needed."""
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
+# ---------------------------------------------------------------------------
+# File I/O
+# ---------------------------------------------------------------------------
 
 
-def read_yaml_file(path: str | Path) -> dict:
-    """Read a YAML file as dict."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+def _ensure_parent(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def write_yaml_file(data: dict, path: str | Path):
-    """Write a dict to YAML file."""
-    ensure_parent_dir(path)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+def _read_yaml(path: Path | str) -> dict:
+    with open(path, "r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
+def _write_yaml(data: dict, path: Path | str) -> None:
+    path = Path(path)
+    _ensure_parent(path)
+    with open(path, "w", encoding="utf-8") as fh:
+        yaml.dump(data, fh, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+def _write_json(data: dict, path: Path | str) -> None:
+    path = Path(path)
+    _ensure_parent(path)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+
+
+def _dump_yaml_text(data: dict) -> str:
+    return yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+# ---------------------------------------------------------------------------
+# Subscription fetching & parsing
+# ---------------------------------------------------------------------------
 
 
 def fetch_subscription(url: str) -> str:
-    """Fetch raw subscription content."""
-    # Lazy import so local config generation works even without requests installed.
-    import requests
+    import requests  # lazy import – not needed for local config generation
 
-    print("[*] Fetching subscription...")
-    resp = requests.get(url, headers=HEADERS, timeout=30)
+    print("[*] Fetching subscription …")
+    resp = requests.get(url, headers=FETCH_HEADERS, timeout=30)
     resp.raise_for_status()
-    print(f"[+] Status: {resp.status_code}  |  Content-Length: {len(resp.text)} bytes")
+    print(f"[+] HTTP {resp.status_code}  |  {len(resp.text):,} bytes")
     return resp.text
 
 
 def parse_yaml(content: str) -> dict:
-    """Parse YAML content."""
-    data = yaml.safe_load(content)
-    return data
+    return yaml.safe_load(content) or {}
 
 
-def summarize(data: dict):
-    """Print a summary of the subscription info."""
+def summarize(data: dict) -> None:
     print("\n" + "=" * 60)
     print("  SUBSCRIPTION SUMMARY")
     print("=" * 60)
-
-    # Top-level keys
     print(f"\n[Top-level keys]: {list(data.keys())}\n")
 
-    # General settings
-    for key in ["port", "socks-port", "redir-port", "mixed-port",
-                "allow-lan", "mode", "log-level", "external-controller",
-                "dns", "ipv6"]:
+    for key in ("port", "socks-port", "mixed-port", "allow-lan", "mode", "log-level"):
         if key in data:
             print(f"  {key}: {data[key]}")
 
-    # Proxies
     proxies = data.get("proxies", [])
     print(f"\n[Proxies]  Total: {len(proxies)}")
-    for i, p in enumerate(proxies[:20]):   # show first 20
-        name = p.get("name", "?")
-        ptype = p.get("type", "?")
-        server = p.get("server", "?")
-        port = p.get("port", "?")
-        print(f"  [{i+1:>3}] {name:<40}  type={ptype}  {server}:{port}")
+    for i, p in enumerate(proxies[:20]):
+        print(
+            f"  [{i+1:>3}] {p.get('name','?'):<40}  "
+            f"type={p.get('type','?')}  {p.get('server','?')}:{p.get('port','?')}"
+        )
     if len(proxies) > 20:
-        print(f"  ... and {len(proxies) - 20} more proxies")
+        print(f"  … and {len(proxies) - 20} more")
 
-    # Proxy groups
     groups = data.get("proxy-groups", [])
     print(f"\n[Proxy Groups]  Total: {len(groups)}")
     for g in groups:
-        gname = g.get("name", "?")
-        gtype = g.get("type", "?")
-        members = g.get("proxies", [])
-        print(f"  - {gname}  ({gtype})  members={len(members)}")
+        print(f"  - {g.get('name','?')} ({g.get('type','?')})  members={len(g.get('proxies',[]))}")
 
-    # Rules
     rules = data.get("rules", [])
     print(f"\n[Rules]  Total: {len(rules)}")
     for r in rules[:10]:
         print(f"  {r}")
     if len(rules) > 10:
-        print(f"  ... and {len(rules) - 10} more rules")
-
-    print("\n" + "=" * 60)
-
-
-def save_yaml(data: dict, path: str = "subscription_output.yaml"):
-    """Save parsed data back to YAML file."""
-    write_yaml_file(data, path)
-    print(f"\n[+] Full YAML saved to: {path}")
+        print(f"  … and {len(rules) - 10} more")
+    print("=" * 60)
 
 
-def save_json(data: dict, path: str = "subscription_output.json"):
-    """Save parsed data to JSON file."""
-    ensure_parent_dir(path)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"[+] Full JSON saved to: {path}")
+# ---------------------------------------------------------------------------
+# Proxy helpers
+# ---------------------------------------------------------------------------
 
 
-def get_proxies(data: dict) -> list[dict]:
-    """Get proxies list safely from parsed Clash YAML."""
+def _get_proxies(data: dict) -> list[dict]:
     proxies = data.get("proxies", [])
     return proxies if isinstance(proxies, list) else []
 
 
-def filter_proxies_by_name_contains(proxies: list[dict], keyword: str) -> list[dict]:
-    """Filter proxies whose name contains given keyword."""
-    out = []
-    keyword_lower = keyword.lower()
-    for p in proxies:
-        name = str(p.get("name", ""))
-        if keyword_lower in name.lower():
-            out.append(p)
-    return out
+def _filter_by_name(proxies: list[dict], keyword: str) -> list[dict]:
+    kw = keyword.lower()
+    return [p for p in proxies if kw in str(p.get("name", "")).lower()]
 
 
-def merge_proxies(base_proxies: list[dict], extra_proxies: list[dict]) -> list[dict]:
-    """
-    Merge proxy lists, deduplicate by proxy name.
-    Keep first occurrence order.
-    """
-    merged = []
-    seen = set()
-    for p in [*base_proxies, *extra_proxies]:
-        name = str(p.get("name", ""))
-        key = name if name else json.dumps(p, ensure_ascii=False, sort_keys=True)
-        if key in seen:
-            continue
-        seen.add(key)
-        merged.append(p)
+def _merge_proxies(base: list[dict], extra: list[dict]) -> list[dict]:
+    """Merge two proxy lists, deduplicating by name (first occurrence wins)."""
+    seen: set[str] = set()
+    merged: list[dict] = []
+    for p in (*base, *extra):
+        key = str(p.get("name") or json.dumps(p, ensure_ascii=False, sort_keys=True))
+        if key not in seen:
+            seen.add(key)
+            merged.append(p)
     return merged
 
 
-def update_proxy_group_members(config: dict, all_proxy_names: list[str], group_name: str = "SSRDOG"):
-    """Update a target proxy-group to include all merged proxy names."""
-    groups = config.get("proxy-groups", [])
-    if not isinstance(groups, list):
-        return
-    for g in groups:
-        if isinstance(g, dict) and g.get("name") == group_name:
-            g["proxies"] = all_proxy_names
-            return
+def _proxy_names(proxies: list[dict], keyword: str = "") -> list[str]:
+    """Return proxy names, optionally filtered by keyword."""
+    kw = keyword.lower()
+    return [
+        str(p["name"])
+        for p in proxies
+        if p.get("name") and (not kw or kw in str(p["name"]).lower())
+    ]
 
 
-def upsert_proxy_group(
+# ---------------------------------------------------------------------------
+# Proxy-group helpers
+# ---------------------------------------------------------------------------
+
+
+def _upsert_proxy_group(
     config: dict,
-    group_name: str,
+    name: str,
     proxies: list[str],
-    group_type: str | None = "select",
-    defaults: dict | None = None,
-):
-    """Create or update a proxy-group by name."""
-    groups = config.get("proxy-groups", [])
-    if not isinstance(groups, list):
-        groups = []
-        config["proxy-groups"] = groups
+    group_type: str = "select",
+    extra: dict | None = None,
+) -> None:
+    """Create or replace a proxy-group entry by name."""
+    groups: list[dict] = config.setdefault("proxy-groups", [])
+    entry: dict | None = next((g for g in groups if g.get("name") == name), None)
+    if entry is None:
+        entry = {"name": name}
+        groups.append(entry)
+    entry["type"] = group_type
+    entry["proxies"] = proxies
+    if extra:
+        entry.update(extra)
 
-    for g in groups:
+
+def _set_group_members(config: dict, group_name: str, members: list[str]) -> None:
+    """Update 'proxies' list of an existing group (no-op if not found)."""
+    for g in config.get("proxy-groups", []):
         if isinstance(g, dict) and g.get("name") == group_name:
-            g["proxies"] = proxies
-            if group_type:
-                g["type"] = group_type
-            if defaults:
-                for k, v in defaults.items():
-                    g.setdefault(k, v)
+            g["proxies"] = members
             return
 
-    new_group = {"name": group_name, "type": group_type or "select", "proxies": proxies}
-    if defaults:
-        new_group.update(defaults)
-    groups.append(new_group)
+
+# ---------------------------------------------------------------------------
+# Rule rewriting
+# ---------------------------------------------------------------------------
 
 
-def proxy_names_containing(proxies: list[dict], keyword: str) -> list[str]:
-    """Return proxy names where name contains keyword."""
-    names = []
-    keyword_lower = keyword.lower()
-    for p in proxies:
-        name = str(p.get("name", ""))
-        if name and keyword_lower in name.lower():
-            names.append(name)
-    return names
+def _rewrite_rule_target(rule: str, new_target: str) -> str:
+    """Replace the last segment (target) of a Clash rule string."""
+    head, sep, _ = rule.rpartition(",")
+    return f"{head}{sep}{new_target}" if sep else rule
 
 
-def _force_rule_target(rule: str, new_target: str) -> str:
-    """Replace the target (last comma-separated segment) in a classical Clash rule."""
-    head, sep, _tail = rule.rpartition(",")
-    if not sep:
-        return rule
-    return f"{head},{new_target}"
-
-
-def enforce_us_isp_for_ai_and_google(config: dict, target_group: str = "US-ISP"):
+def enforce_us_isp_rules(config: dict, target_group: str = "US-ISP") -> None:
     """
-    Ensure AI/Google service traffic uses US-ISP only by:
-    1) Forcing related proxy-groups to only US-ISP
-    2) Rewriting related rule targets to US-ISP
+    Force all AI / Google / OpenAI / Claude related rules to route via
+    *target_group* and pin the matching proxy-groups to that group only.
     """
-    groups = config.get("proxy-groups", [])
-    if isinstance(groups, list):
-        for g in groups:
-            if not isinstance(g, dict):
-                continue
-            if g.get("name") in {"🤖 ChatGPT", "▶️ YouTube"}:
-                g["type"] = "select"
-                g["proxies"] = [target_group]
+    # Fix proxy-groups
+    for g in config.get("proxy-groups", []):
+        if isinstance(g, dict) and g.get("name") in _AI_GOOGLE_GROUPS:
+            g["type"] = "select"
+            g["proxies"] = [target_group]
 
-    rules = config.get("rules", [])
-    if not isinstance(rules, list):
-        return
-
-    ai_google_keywords = (
-        "geosite,youtube",
-        "rule-set,google",
-        "gemini.google.com",
-        "bard.google.com",
-        "ai.google.dev",
-        "makersuite.google.com",
-        "alkalimakersuite-pa.clients6.google.com",
-        "deepmind.com",
-        "deepmind.google",
-        "generativeai.google",
-        "proactivebackend-pa.googleapis.com",
-        "apis.google.com",
-        "openai",
-        "chatgpt.com",
-        "oaiusercontent.com",
-        "anthropic.com",
-        "claude.ai",
-        "openaicom",
-        "generativelanguage",
-    )
-
-    updated_rules = []
-    for rule in rules:
+    # Rewrite rules
+    updated: list[str] = []
+    for rule in config.get("rules", []):
         if not isinstance(rule, str):
-            updated_rules.append(rule)
+            updated.append(rule)
             continue
         low = rule.lower()
-        if any(k in low for k in ai_google_keywords):
-            updated_rules.append(_force_rule_target(rule, target_group))
+        if any(k in low for k in _US_ISP_RULE_KEYWORDS):
+            updated.append(_rewrite_rule_target(rule, target_group))
         else:
-            updated_rules.append(rule)
-    config["rules"] = updated_rules
+            updated.append(rule)
+    config["rules"] = updated
 
 
-def generate_combined_us_config(
-    self_proxy_path: str = "configs/self_proxy.yaml",
-    subscription_path: str = "outputs/subscription_output.yaml",
-    template_path: str = "templates/clash_subscribes.yaml",
-    output_path: str = "outputs/self_proxy_us_full.yaml",
+# ---------------------------------------------------------------------------
+# Config builder
+# ---------------------------------------------------------------------------
+
+
+def generate_combined_config(
+    self_proxy_path: str | Path = "configs/self_proxy.yaml",
+    subscription_path: str | Path = "outputs/subscription_output.yaml",
+    template_path: str | Path = "templates/clash_subscribes.yaml",
+    output_path: str | Path = "outputs/self_proxy_us_full.yaml",
     name_keyword: str = "United States",
 ) -> dict:
     """
-    Build full Clash config:
-    - base template from template_path
-    - proxies = self_proxy proxies + subscription proxies filtered by name_keyword
+    Build the final merged Clash config:
+
+    Proxy sources
+    ─────────────
+    • self_proxy_path  – personal / self-hosted proxies (always included)
+    • subscription_path – upstream subscription; only entries whose name
+                          contains *name_keyword* are kept
+
+    Group wiring (matches templates/clash_subscribes.yaml)
+    ──────────────────────────────────────────────────────
+    • US-ISP        → only the ISP/vless proxy
+    • US-COM-Manual → all non-ISP proxies (manual selection)
+    • US-COM-Auto   → same list, url-test mode
+    • SSRDOG        → ALL merged proxies (full fallback pool)
     """
-    self_proxy_data = read_yaml_file(self_proxy_path)
-    subscription_data = read_yaml_file(subscription_path)
-    template_data = read_yaml_file(template_path)
+    self_data = _read_yaml(self_proxy_path)
+    sub_data = _read_yaml(subscription_path)
+    template = _read_yaml(template_path)
 
-    self_proxies = get_proxies(self_proxy_data)
-    subscription_proxies = get_proxies(subscription_data)
-    extra_proxies = filter_proxies_by_name_contains(subscription_proxies, name_keyword)
-    merged_proxies = merge_proxies(self_proxies, extra_proxies)
+    self_proxies = _get_proxies(self_data)
+    sub_proxies = _get_proxies(sub_data)
 
-    template_data["proxies"] = merged_proxies
-    all_proxy_names = [p.get("name", "") for p in merged_proxies if p.get("name")]
-    update_proxy_group_members(template_data, all_proxy_names, group_name="SSRDOG")
+    filtered_sub = _filter_by_name(sub_proxies, name_keyword)
+    merged = _merge_proxies(self_proxies, filtered_sub)
 
-    # Custom groups for combined US proxies.
-    us_isp_names = proxy_names_containing(merged_proxies, "ISP-vless-reality-vision")
-    us_com_candidates = [n for n in all_proxy_names if n not in us_isp_names]
-    us_com_names = us_com_candidates
+    template["proxies"] = merged
 
-    # Keep compatibility with old/new template group names.
-    upsert_proxy_group(template_data, "US-ISP", us_isp_names, group_type="select")
-    upsert_proxy_group(template_data, "US-COM", us_com_names, group_type="select")
-    upsert_proxy_group(template_data, "US-COM-Manual", us_com_names, group_type="select")
-    upsert_proxy_group(
-        template_data,
+    all_names = _proxy_names(merged)
+
+    # US-ISP  – only the dedicated ISP proxy
+    isp_names = _proxy_names(merged, "ISP-vless-reality-vision")
+
+    # US-COM  – every proxy that is NOT the ISP proxy
+    com_names = [n for n in all_names if n not in isp_names]
+
+    # Wire groups ──────────────────────────────────────────────────────────
+    _upsert_proxy_group(template, "US-ISP", isp_names)
+    _upsert_proxy_group(template, "US-COM-Manual", com_names)
+    _upsert_proxy_group(
+        template,
         "US-COM-Auto",
-        us_com_names,
+        com_names,
         group_type="url-test",
-        defaults={
+        extra={
             "url": "http://www.gstatic.com/generate_204",
             "interval": 300,
             "tolerance": 50,
         },
     )
-    enforce_us_isp_for_ai_and_google(template_data, target_group="US-ISP")
+    # SSRDOG gets the full merged pool so nothing is unreachable
+    _set_group_members(template, "SSRDOG", all_names)
 
-    write_yaml_file(template_data, output_path)
+    # Guarantee AI / Google traffic never leaks to non-US-ISP proxies
+    enforce_us_isp_rules(template, target_group="US-ISP")
+
+    _write_yaml(template, output_path)
     print(
-        f"[+] Full Clash config saved to: {output_path} "
-        f"(self={len(self_proxies)}, filtered={len(extra_proxies)}, merged={len(merged_proxies)})"
+        f"[+] Config saved → {output_path} "
+        f"(self={len(self_proxies)}, filtered={len(filtered_sub)}, "
+        f"merged={len(merged)}, us-isp={len(isp_names)}, us-com={len(com_names)})"
     )
-    return template_data
+    return template
 
 
-def _dump_yaml_text(data: dict) -> str:
-    """Serialize Clash config as YAML text."""
-    return yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
-
-
-def read_update_interval_seconds() -> int:
-    """
-    Read update interval from env var.
-    Supports UPDATE_INTERVAL_HOURS (preferred) or UPDATE_INTERVAL_SECONDS.
-    """
-    interval_seconds = os.getenv("UPDATE_INTERVAL_SECONDS", "").strip()
-    if interval_seconds:
-        try:
-            value = int(interval_seconds)
-            if value > 0:
-                return value
-        except ValueError:
-            pass
-
-    interval_hours = os.getenv("UPDATE_INTERVAL_HOURS", "").strip()
-    if interval_hours:
-        try:
-            hours = float(interval_hours)
-            if hours > 0:
-                return int(hours * 60 * 60)
-        except ValueError:
-            pass
-
-    return DEFAULT_UPDATE_INTERVAL_SECONDS
+# ---------------------------------------------------------------------------
+# Top-level build entry point
+# ---------------------------------------------------------------------------
 
 
 def build_clash_config(name_keyword: str = DEFAULT_KEYWORD) -> dict:
     """
-    Fetch upstream subscription and build final Clash config dict.
-    Also persists intermediate/output files for traceability.
+    Full pipeline:
+      1. Fetch & persist raw subscription
+      2. Parse and summarize
+      3. Generate combined config
     """
     sub_url = get_sub_url()
     raw = fetch_subscription(sub_url)
@@ -415,17 +395,18 @@ def build_clash_config(name_keyword: str = DEFAULT_KEYWORD) -> dict:
     parsed_json_path = RUNTIME_OUTPUT_DIR / "subscription_output.json"
     combined_path = RUNTIME_OUTPUT_DIR / "self_proxy_us_full.yaml"
 
-    ensure_parent_dir(raw_path)
-    with open(raw_path, "w", encoding="utf-8") as f:
-        f.write(raw)
-    print(f"[+] Raw content saved to: {raw_path}")
+    _ensure_parent(raw_path)
+    raw_path.write_text(raw, encoding="utf-8")
+    print(f"[+] Raw saved → {raw_path}")
 
     data = parse_yaml(raw)
     summarize(data)
-    save_yaml(data, str(parsed_yaml_path))
-    save_json(data, str(parsed_json_path))
+    _write_yaml(data, parsed_yaml_path)
+    _write_json(data, parsed_json_path)
+    print(f"[+] Parsed YAML → {parsed_yaml_path}")
+    print(f"[+] Parsed JSON → {parsed_json_path}")
 
-    return generate_combined_us_config(
+    return generate_combined_config(
         self_proxy_path="configs/self_proxy.yaml",
         subscription_path=str(parsed_yaml_path),
         template_path="templates/clash_subscribes.yaml",
@@ -434,79 +415,109 @@ def build_clash_config(name_keyword: str = DEFAULT_KEYWORD) -> dict:
     )
 
 
-def run_web_service(host: str = "0.0.0.0", port: int = 8000):
-    """Start Flask service that returns Clash YAML subscription content."""
+# ---------------------------------------------------------------------------
+# Interval helper
+# ---------------------------------------------------------------------------
+
+
+def _read_update_interval() -> int:
+    """
+    Read refresh interval from env.
+    UPDATE_INTERVAL_HOURS takes precedence over UPDATE_INTERVAL_SECONDS.
+    """
+    for env, multiplier in (("UPDATE_INTERVAL_HOURS", 3600), ("UPDATE_INTERVAL_SECONDS", 1)):
+        raw = os.getenv(env, "").strip()
+        if raw:
+            try:
+                value = float(raw)
+                if value > 0:
+                    return int(value * multiplier)
+            except ValueError:
+                pass
+    return DEFAULT_UPDATE_INTERVAL_SECONDS
+
+
+# ---------------------------------------------------------------------------
+# Flask web service
+# ---------------------------------------------------------------------------
+
+
+def run_web_service(host: str = "0.0.0.0", port: int = 8000) -> None:
     from flask import Flask, Response, jsonify, request
 
     app = Flask(__name__)
-    refresh_lock = threading.Lock()
-    refresh_state = {"last_success_at": 0.0, "last_keyword": ""}
+    update_interval = _read_update_interval()
     output_path = RUNTIME_OUTPUT_DIR / "self_proxy_us_full.yaml"
-    update_interval_seconds = read_update_interval_seconds()
 
-    def _read_cached_config() -> dict | None:
+    # Shared mutable state (protected by refresh_lock where needed)
+    state: dict = {"last_success_at": 0.0, "last_keyword": ""}
+    refresh_lock = threading.Lock()
+
+    # ------------------------------------------------------------------ cache
+
+    def _read_cache() -> dict | None:
         if not output_path.exists():
             return None
         try:
-            data = read_yaml_file(output_path)
+            data = _read_yaml(output_path)
             return data if isinstance(data, dict) else None
-        except Exception:  # noqa: BLE001
+        except Exception:
             return None
 
-    def _refresh_config(keyword: str) -> dict:
+    def _is_stale(keyword: str) -> bool:
+        age = time.time() - state["last_success_at"]
+        return age >= update_interval or state["last_keyword"] != keyword
+
+    # ---------------------------------------------------------------- refresh
+
+    def _do_refresh(keyword: str) -> dict:
         config = build_clash_config(name_keyword=keyword)
-        refresh_state["last_success_at"] = time.time()
-        refresh_state["last_keyword"] = keyword
+        state["last_success_at"] = time.time()
+        state["last_keyword"] = keyword
         return config
 
-    def _refresh_if_needed(keyword: str, force: bool = False) -> dict:
-        now = time.time()
-        is_stale = (now - refresh_state["last_success_at"]) >= update_interval_seconds
-        keyword_changed = refresh_state["last_keyword"] != keyword
-        cached_config = _read_cached_config()
-        if not force and cached_config is not None and not is_stale and not keyword_changed:
-            return cached_config
+    def _refresh_if_needed(keyword: str, *, force: bool = False) -> dict | None:
+        cached = _read_cache()
+        if not force and cached is not None and not _is_stale(keyword):
+            return cached
         with refresh_lock:
-            now = time.time()
-            is_stale = (now - refresh_state["last_success_at"]) >= update_interval_seconds
-            keyword_changed = refresh_state["last_keyword"] != keyword
-            cached_config = _read_cached_config()
-            if not force and cached_config is not None and not is_stale and not keyword_changed:
-                return cached_config
-            return _refresh_config(keyword)
+            cached = _read_cache()
+            if not force and cached is not None and not _is_stale(keyword):
+                return cached
+            return _do_refresh(keyword)
 
-    def _cache_is_stale() -> bool:
-        return (time.time() - refresh_state["last_success_at"]) >= update_interval_seconds
-
-    def _trigger_async_refresh(keyword: str, force: bool = False):
-        # Never block request path; skip if a refresh is already running.
+    def _async_refresh(keyword: str, *, force: bool = False) -> None:
+        """Fire-and-forget background refresh (skips if already running)."""
         if refresh_lock.locked():
             return
 
-        def _worker():
+        def _worker() -> None:
             try:
                 _refresh_if_needed(keyword, force=force)
-            except Exception as e:  # noqa: BLE001
-                print(f"[!] Async refresh failed: {e}")
+            except Exception as exc:
+                print(f"[!] Async refresh failed: {exc}")
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _background_refresh_loop():
-        # Keep outputs fresh even when nobody hits the endpoint.
+    # --------------------------------------------------- background loop
+
+    def _background_loop() -> None:
         while True:
             try:
                 _refresh_if_needed(DEFAULT_KEYWORD)
-            except Exception as e:  # noqa: BLE001
-                print(f"[!] Background refresh failed: {e}")
-            sleep_seconds = max(30, min(update_interval_seconds, 300))
-            time.sleep(sleep_seconds)
+            except Exception as exc:
+                print(f"[!] Background refresh error: {exc}")
+            time.sleep(min(update_interval, 300))
 
-    # Prime cache once on startup (best-effort), then start background refresh worker.
+    # Prime cache on startup, then launch background worker
     try:
         _refresh_if_needed(DEFAULT_KEYWORD, force=True)
-    except Exception as e:  # noqa: BLE001
-        print(f"[!] Initial refresh failed: {e}")
-    threading.Thread(target=_background_refresh_loop, daemon=True).start()
+    except Exception as exc:
+        print(f"[!] Initial refresh failed: {exc}")
+
+    threading.Thread(target=_background_loop, daemon=True).start()
+
+    # ---------------------------------------------------------------- routes
 
     @app.get("/health")
     def health():
@@ -515,76 +526,81 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
     @app.get("/")
     @app.get("/subscription.yaml")
     def subscription_yaml():
-        keyword = request.args.get("keyword", DEFAULT_KEYWORD)
-        query_token = request.args.get("token", "")
+        # --- auth ---
         auth_header = request.headers.get("Authorization", "")
-        header_token = ""
-        if auth_header.lower().startswith("bearer "):
-            header_token = auth_header[7:].strip()
-        provided_token = header_token or query_token
+        header_token = auth_header[7:].strip() if auth_header.lower().startswith("bearer ") else ""
+        provided_token = header_token or request.args.get("token", "")
 
         try:
-            expected_token = get_access_token()
-            if not provided_token or not secrets.compare_digest(provided_token, expected_token):
-                return jsonify({"error": "unauthorized"}), 401
+            expected = get_access_token()
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 500
 
-            config = _read_cached_config()
-            if config is None:
-                _trigger_async_refresh(keyword, force=True)
-                return jsonify(
-                    {
-                        "error": "cache_not_ready",
-                        "message": "Cached rules are warming up. Please retry shortly.",
-                    }
-                ), 503
+        if not provided_token or not secrets.compare_digest(provided_token, expected):
+            return jsonify({"error": "unauthorized"}), 401
 
-            # Serve cached rules immediately; refresh happens in background only.
-            if _cache_is_stale() or refresh_state["last_keyword"] != keyword:
-                _trigger_async_refresh(keyword)
+        keyword = request.args.get("keyword", DEFAULT_KEYWORD)
 
-            body = _dump_yaml_text(config)
+        try:
+            cached = _read_cache()
+            if cached is None:
+                _async_refresh(keyword, force=True)
+                return jsonify({
+                    "error": "cache_not_ready",
+                    "message": "Config is warming up – please retry shortly.",
+                }), 503
+
+            # Serve cached; trigger async refresh if stale
+            if _is_stale(keyword):
+                _async_refresh(keyword)
+
             return Response(
-                body,
+                _dump_yaml_text(cached),
                 mimetype="text/yaml",
                 headers={"Content-Disposition": 'inline; filename="clash_subscription.yaml"'},
             )
-        except Exception as e:  # noqa: BLE001
-            return jsonify({"error": str(e)}), 500
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
 
-    print(f"[+] Flask service running at http://{host}:{port}")
-    print("[+] Endpoints: /subscription.yaml  /health")
-    print("[+] Auth: Authorization: Bearer <access_token> (or ?token=...)")
-    print(f"[+] Auto refresh interval: {update_interval_seconds}s")
-    print("[+] Example: /subscription.yaml?keyword=United%20States")
+    # ---------------------------------------------------------------- startup
+
+    print(f"[+] Listening on http://{host}:{port}")
+    print("[+] Endpoints : GET /subscription.yaml   GET /health")
+    print("[+] Auth      : Authorization: Bearer <token>  or  ?token=<token>")
+    print(f"[+] Refresh   : every {update_interval}s  (background)")
+    print("[+] Keyword param: ?keyword=United%20States")
     app.run(host=host, port=port, debug=False)
 
 
-def main():
-    parser = ArgumentParser(description="Clash subscription generator/service")
-    parser.add_argument("--serve", action="store_true", help="Run as web service")
-    parser.add_argument("--host", default="0.0.0.0", help="Service host (default: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8000, help="Service port (default: 8000)")
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    parser = ArgumentParser(description="Clash subscription generator / web service")
+    parser.add_argument("--serve", action="store_true", help="Run as HTTP service")
+    parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
     parser.add_argument(
         "--keyword",
         default=DEFAULT_KEYWORD,
-        help='Proxy name filter keyword when generating config (default: "United States")',
+        help=f'Filter keyword for subscription proxies (default: "{DEFAULT_KEYWORD}")',
     )
     args = parser.parse_args()
 
     try:
-        import requests
+        import requests as _  # noqa: F401 – ensure it's installed before we start
 
         if args.serve:
             run_web_service(host=args.host, port=args.port)
         else:
             build_clash_config(name_keyword=args.keyword)
 
-    except requests.RequestException as e:
-        print(f"[!] Network error: {e}")
-    except yaml.YAMLError as e:
-        print(f"[!] YAML parse error: {e}")
-    except ValueError as e:
-        print(f"[!] Config error: {e}")
+    except ImportError:
+        print("[!] Missing dependency: pip install requests")
+    except (yaml.YAMLError, ValueError) as exc:
+        print(f"[!] {type(exc).__name__}: {exc}")
 
 
 if __name__ == "__main__":
