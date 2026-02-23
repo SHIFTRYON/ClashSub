@@ -139,13 +139,13 @@ proxy-groups:
       type: select,
       proxies: ["🇺🇸 ISP-vless-reality-vision", "🇺🇸 Bwh ShadowTLS"],
     }
-  - { name: ▶️ YouTube, type: select, proxies: [SSRDOG] }
+  - { name: ▶️ YouTube, type: select, proxies: [US-ISP] }
   - { name: 📲 电报信息, type: select, proxies: [SSRDOG] }
-  - { name: 🤖 ChatGPT, type: select, proxies: [SSRDOG] }
+  - { name: 🤖 ChatGPT, type: select, proxies: [US-ISP] }
   - { name: 🛑 全球拦截, type: select, proxies: [REJECT, DIRECT] }
   - { name: 🐟 漏网之鱼, type: select, proxies: [SSRDOG, DIRECT] }
-  - { name: 🍎 iCloud, type: select, proxies: [SSRDOG] }
-  - { name: 🍎 Apple, type: select, proxies: [SSRDOG] }
+  - { name: 🍎 iCloud, type: select, proxies: [DIRECT] }
+  - { name: 🍎 Apple, type: select, proxies: [DIRECT] }
   - { name: 🍎 Google, type: select, proxies: [US-ISP] }
   - { name: 🍎 Microsoft, type: select, proxies: [DIRECT] }
 
@@ -156,20 +156,18 @@ rules:
   - IP-CIDR,10.10.10.34/32,DIRECT
   - IP-CIDR,10.121.128.100/32,DIRECT
   - DOMAIN,streamlit.io,SSRDOG
-  - DOMAIN-SUFFIX,claude.ai,SSRDOG
-  - DOMAIN-SUFFIX,anthropic.com,SSRDOG
-  - DOMAIN,cdn.usefathom.com,SSRDOG
+  - DOMAIN-SUFFIX,claude.ai,US-ISP
+  - DOMAIN-SUFFIX,anthropic.com,US-ISP
+  - DOMAIN,cdn.usefathom.com,US-ISP
   - DOMAIN-SUFFIX,okx.com,SSRDOG
-  - GEOSITE,youtube,▶️ YouTube
+  - GEOSITE,youtube,US-ISP
   - OR,((DOMAIN,gemini.google.com),(DOMAIN,bard.google.com),(GEOSITE,openai)),🤖 ChatGPT
   - RULE-SET,applications,DIRECT
-  - DOMAIN,clash.razord.top,DIRECT
-  - DOMAIN,yacd.haishan.me,DIRECT
   - RULE-SET,private,DIRECT
   - RULE-SET,reject,🛑 全球拦截
-  - RULE-SET,icloud,SSRDOG
-  - RULE-SET,apple,SSRDOG
-  - RULE-SET,google,SSRDOG
+  - RULE-SET,icloud,DIRECT
+  - RULE-SET,apple,DIRECT
+  - RULE-SET,google,US-ISP
   - RULE-SET,proxy,SSRDOG
   - RULE-SET,direct,DIRECT
   - RULE-SET,lancidr,DIRECT
@@ -188,38 +186,37 @@ rules:
   - IP-CIDR,192.0.2.0/24,DIRECT
   - IP-CIDR6,fe80::/10,DIRECT
 
-  - DOMAIN,ai.google.dev,SSRDOG
-  - DOMAIN,alkalimakersuite-pa.clients6.google.com,SSRDOG
-  - DOMAIN,makersuite.google.com,SSRDOG
-  - DOMAIN-SUFFIX,bard.google.com,SSRDOG
-  - DOMAIN-SUFFIX,deepmind.com,SSRDOG
-  - DOMAIN-SUFFIX,deepmind.google,SSRDOG
-  - DOMAIN-SUFFIX,gemini.google.com,SSRDOG
-  - DOMAIN-SUFFIX,generativeai.google,SSRDOG
-  - DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,SSRDOG
-  - DOMAIN-SUFFIX,apis.google.com,SSRDOG
-  - DOMAIN-KEYWORD,colab,SSRDOG
-  - DOMAIN-KEYWORD,developerprofiles,SSRDOG
-  - DOMAIN-KEYWORD,generativelanguage,SSRDOG
+  - DOMAIN,ai.google.dev,US-ISP
+  - DOMAIN,alkalimakersuite-pa.clients6.google.com,US-ISP
+  - DOMAIN,makersuite.google.com,US-ISP
+  - DOMAIN-SUFFIX,bard.google.com,US-ISP
+  - DOMAIN-SUFFIX,deepmind.com,US-ISP
+  - DOMAIN-SUFFIX,deepmind.google,US-ISP
+  - DOMAIN-SUFFIX,gemini.google.com,US-ISP
+  - DOMAIN-SUFFIX,generativeai.google,US-ISP
+  - DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,US-ISP
+  - DOMAIN-SUFFIX,apis.google.com,US-ISP
+  - DOMAIN-KEYWORD,colab,US-ISP
+  - DOMAIN-KEYWORD,developerprofiles,US-ISP
+  - DOMAIN-KEYWORD,generativelanguage,US-ISP
   # Cursor IDE connections
-# --- Cursor IDE & Backend ---
-  - DOMAIN-SUFFIX,cursor.sh,SSRDOG
-  - DOMAIN-SUFFIX,cursor.com,SSRDOG
-  - DOMAIN-SUFFIX,cursorapi.com,SSRDOG
-  - DOMAIN-SUFFIX,cursor-cdn.com,SSRDOG
-  - DOMAIN-SUFFIX,repo42.cursor.sh,SSRDOG
+  - DOMAIN-SUFFIX,cursor.sh,US-ISP
+  - DOMAIN-SUFFIX,cursor.com,US-ISP
+  - DOMAIN-SUFFIX,cursorapi.com,US-ISP
+  - DOMAIN-SUFFIX,cursor-cdn.com,US-ISP
+  - DOMAIN-SUFFIX,repo42.cursor.sh,US-ISP
   
   # --- AI Chat Providers (Claude & GPT) ---
-  - DOMAIN-SUFFIX,openai.com,SSRDOG
-  - DOMAIN-SUFFIX,chatgpt.com,SSRDOG
-  - DOMAIN-SUFFIX,oaiusercontent.com,SSRDOG
-  - DOMAIN-SUFFIX,anthropic.com,SSRDOG
-  - DOMAIN-SUFFIX,claude.ai,SSRDOG
+  - DOMAIN-SUFFIX,openai.com,US-ISP
+  - DOMAIN-SUFFIX,chatgpt.com,US-ISP
+  - DOMAIN-SUFFIX,oaiusercontent.com,US-ISP
+  - DOMAIN-SUFFIX,anthropic.com,US-ISP
+  - DOMAIN-SUFFIX,claude.ai,US-ISP
   
   # --- Essential Dependencies ---
-  - DOMAIN-SUFFIX,identrust.com,SSRDOG
-  - DOMAIN-SUFFIX,edgecompute.app,SSRDOG
-  - DOMAIN-KEYWORD,openaicom,SSRDOG
+  - DOMAIN-SUFFIX,identrust.com,US-ISP
+  - DOMAIN-SUFFIX,edgecompute.app,US-ISP
+  - DOMAIN-KEYWORD,openaicom,US-ISP
   
   # VS Code Backend
   - DOMAIN-SUFFIX,vscode.dev,SSRDOG
@@ -228,12 +225,12 @@ rules:
   - DOMAIN-SUFFIX,gallerycdn.vsassets.io,SSRDOG
   
   # AI Models
-  - DOMAIN-SUFFIX,openai.com,SSRDOG
-  - DOMAIN-SUFFIX,anthropic.com,SSRDOG
+  - DOMAIN-SUFFIX,openai.com,US-ISP
+  - DOMAIN-SUFFIX,anthropic.com,US-ISP
   
   # Process-based (Requires TUN Mode)
-  - PROCESS-NAME,Cursor,SSRDOG
-  - PROCESS-NAME,cursor,SSRDOG
+  - PROCESS-NAME,Cursor,US-ISP
+  - PROCESS-NAME,cursor,US-ISP
 
   # proton mail services
   - DOMAIN-SUFFIX,proton.me,SSRDOG
