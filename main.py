@@ -214,7 +214,13 @@ def update_proxy_group_members(config: dict, all_proxy_names: list[str], group_n
             return
 
 
-def upsert_proxy_group(config: dict, group_name: str, proxies: list[str], group_type: str = "select"):
+def upsert_proxy_group(
+    config: dict,
+    group_name: str,
+    proxies: list[str],
+    group_type: str | None = "select",
+    defaults: dict | None = None,
+):
     """Create or update a proxy-group by name."""
     groups = config.get("proxy-groups", [])
     if not isinstance(groups, list):
@@ -223,11 +229,18 @@ def upsert_proxy_group(config: dict, group_name: str, proxies: list[str], group_
 
     for g in groups:
         if isinstance(g, dict) and g.get("name") == group_name:
-            g["type"] = group_type
             g["proxies"] = proxies
+            if group_type:
+                g["type"] = group_type
+            if defaults:
+                for k, v in defaults.items():
+                    g.setdefault(k, v)
             return
 
-    groups.append({"name": group_name, "type": group_type, "proxies": proxies})
+    new_group = {"name": group_name, "type": group_type or "select", "proxies": proxies}
+    if defaults:
+        new_group.update(defaults)
+    groups.append(new_group)
 
 
 def proxy_names_containing(proxies: list[dict], keyword: str) -> list[str]:
@@ -333,8 +346,21 @@ def generate_combined_us_config(
     us_com_candidates = [n for n in all_proxy_names if n not in us_isp_names]
     us_com_names = us_com_candidates
 
-    upsert_proxy_group(template_data, "US-ISP", us_isp_names)
-    upsert_proxy_group(template_data, "US-COM", us_com_names)
+    # Keep compatibility with old/new template group names.
+    upsert_proxy_group(template_data, "US-ISP", us_isp_names, group_type="select")
+    upsert_proxy_group(template_data, "US-COM", us_com_names, group_type="select")
+    upsert_proxy_group(template_data, "US-COM-Manual", us_com_names, group_type="select")
+    upsert_proxy_group(
+        template_data,
+        "US-COM-Auto",
+        us_com_names,
+        group_type="url-test",
+        defaults={
+            "url": "http://www.gstatic.com/generate_204",
+            "interval": 300,
+            "tolerance": 50,
+        },
+    )
     enforce_us_isp_for_ai_and_google(template_data, target_group="US-ISP")
 
     write_yaml_file(template_data, output_path)
