@@ -9,10 +9,12 @@ services:
       - "28033:8000"
     environment:
       - TZ=UTC
+      # Optional: override with a custom config path inside container.
+      # - SUBSCRIPTION_CONFIG=/app/configs/subscription.local.yaml
     volumes:
-      # Keep runtime config editable on host.
-      - ./configs:/app/configs
-      # Persist generated output files.
-      - ./subscription_raw.yaml:/app/subscription_raw.yaml
-      - ./subscription_output.yaml:/app/subscription_output.yaml
-      - ./subscription_output.json:/app/subscription_output.json
+      # Keep runtime config readable from host; secrets go in subscription.local.yaml.
+      - ./configs:/app/configs:ro
+      # Keep template files as read-only input.
+      - ./templates:/app/templates:ro
+      # Persist generated output files outside tracked repo files.
+      - ./outputs:/app/outputs

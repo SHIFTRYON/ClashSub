@@ -6,6 +6,7 @@ and can generate merged Clash configs.
 """
 
 import json
+import os
 import secrets
 from argparse import ArgumentParser
 from pathlib import Path
@@ -14,6 +15,9 @@ import yaml
 
 # Default subscription URL (can be overridden by configs/subscription.yaml)
 DEFAULT_SUB_URL = ()
+DEFAULT_CONFIG_PATH = Path("configs/subscription.yaml")
+LOCAL_CONFIG_PATH = Path("configs/subscription.local.yaml")
+RUNTIME_OUTPUT_DIR = Path("outputs")
 
 HEADERS = {
     "User-Agent": "ClashForWindows/0.20.39",
@@ -21,16 +25,31 @@ HEADERS = {
 }
 
 
-def load_runtime_config(config_path: str = "configs/subscription.yaml") -> dict:
+def resolve_runtime_config_path() -> Path:
+    """
+    Resolve runtime config path with precedence:
+    1) SUBSCRIPTION_CONFIG env var
+    2) configs/subscription.local.yaml (git-ignored local secrets)
+    3) configs/subscription.yaml (tracked template/default)
+    """
+    env_path = os.getenv("SUBSCRIPTION_CONFIG", "").strip()
+    if env_path:
+        return Path(env_path)
+    if LOCAL_CONFIG_PATH.exists():
+        return LOCAL_CONFIG_PATH
+    return DEFAULT_CONFIG_PATH
+
+
+def load_runtime_config(config_path: str | Path | None = None) -> dict:
     """Load runtime config values from YAML file."""
-    path = Path(config_path)
+    path = Path(config_path) if config_path else resolve_runtime_config_path()
     if not path.exists():
         return {}
     data = read_yaml_file(path)
     return data if isinstance(data, dict) else {}
 
 
-def get_sub_url(config_path: str = "configs/subscription.yaml") -> str:
+def get_sub_url(config_path: str | Path | None = None) -> str:
     """Resolve subscription URL from config file or fallback."""
     runtime_cfg = load_runtime_config(config_path)
     sub_url = runtime_cfg.get("sub_url", DEFAULT_SUB_URL)
@@ -39,7 +58,7 @@ def get_sub_url(config_path: str = "configs/subscription.yaml") -> str:
     return sub_url.strip()
 
 
-def get_access_token(config_path: str = "configs/subscription.yaml") -> str:
+def get_access_token(config_path: str | Path | None = None) -> str:
     """Read access token for protecting public subscription endpoint."""
     runtime_cfg = load_runtime_config(config_path)
     token = runtime_cfg.get("access_token")
@@ -282,9 +301,9 @@ def enforce_us_isp_for_ai_and_google(config: dict, target_group: str = "US-ISP")
 
 def generate_combined_us_config(
     self_proxy_path: str = "configs/self_proxy.yaml",
-    subscription_path: str = "subscription_output.yaml",
+    subscription_path: str = "outputs/subscription_output.yaml",
     template_path: str = "templates/clash_subscribes.yaml",
-    output_path: str = "configs/self_proxy_us_full.yaml",
+    output_path: str = "outputs/self_proxy_us_full.yaml",
     name_keyword: str = "United States",
 ) -> dict:
     """
@@ -332,23 +351,29 @@ def build_clash_config(name_keyword: str = "United States") -> dict:
     Fetch upstream subscription and build final Clash config dict.
     Also persists intermediate/output files for traceability.
     """
-    sub_url = get_sub_url("configs/subscription.yaml")
+    sub_url = get_sub_url()
     raw = fetch_subscription(sub_url)
 
-    with open("subscription_raw.yaml", "w", encoding="utf-8") as f:
+    raw_path = RUNTIME_OUTPUT_DIR / "subscription_raw.yaml"
+    parsed_yaml_path = RUNTIME_OUTPUT_DIR / "subscription_output.yaml"
+    parsed_json_path = RUNTIME_OUTPUT_DIR / "subscription_output.json"
+    combined_path = RUNTIME_OUTPUT_DIR / "self_proxy_us_full.yaml"
+
+    ensure_parent_dir(raw_path)
+    with open(raw_path, "w", encoding="utf-8") as f:
         f.write(raw)
-    print("[+] Raw content saved to: subscription_raw.yaml")
+    print(f"[+] Raw content saved to: {raw_path}")
 
     data = parse_yaml(raw)
     summarize(data)
-    save_yaml(data, "subscription_output.yaml")
-    save_json(data, "subscription_output.json")
+    save_yaml(data, str(parsed_yaml_path))
+    save_json(data, str(parsed_json_path))
 
     return generate_combined_us_config(
         self_proxy_path="configs/self_proxy.yaml",
-        subscription_path="subscription_output.yaml",
+        subscription_path=str(parsed_yaml_path),
         template_path="templates/clash_subscribes.yaml",
-        output_path="configs/self_proxy_us_full.yaml",
+        output_path=str(combined_path),
         name_keyword=name_keyword,
     )
 
@@ -375,7 +400,7 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
         provided_token = header_token or query_token
 
         try:
-            expected_token = get_access_token("configs/subscription.yaml")
+            expected_token = get_access_token()
             if not provided_token or not secrets.compare_digest(provided_token, expected_token):
                 return jsonify({"error": "unauthorized"}), 401
 

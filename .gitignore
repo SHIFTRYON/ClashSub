@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local/private runtime config
+configs/subscription.local.yaml
+
+# Runtime generated outputs
+outputs/
+subscription_raw.yaml
+subscription_output.yaml
+subscription_output.json
