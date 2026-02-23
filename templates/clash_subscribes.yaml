@@ -166,15 +166,20 @@ proxy-groups:
   - name: '🎬 Netflix'
     type: select
     proxies:
-      - 🔰国外流量
+      - 🔰 国外流量
       - DIRECT
 
   - name: '🎥 DisneyPlus'
     type: select
     proxies:
-      - 🔰国外流量
+      - 🔰 国外流量
       - DIRECT
-
+  
+  - name: '🌍️ 国内流媒体'
+    type: select
+    proxies:
+      - DIRECT
+      - 🔰 国外流量
 
   - name: 🛑 全球拦截
     type: select
