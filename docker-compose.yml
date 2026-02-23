@@ -9,6 +9,7 @@ services:
       - "28033:8000"
     environment:
       - TZ=UTC
+      - UPDATE_INTERVAL_HOURS=6
       # Optional: override with a custom config path inside container.
       # - SUBSCRIPTION_CONFIG=/app/configs/subscription.local.yaml
     volumes:

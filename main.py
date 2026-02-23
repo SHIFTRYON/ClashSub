@@ -8,6 +8,8 @@ and can generate merged Clash configs.
 import json
 import os
 import secrets
+import threading
+import time
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -18,6 +20,8 @@ DEFAULT_SUB_URL = ()
 DEFAULT_CONFIG_PATH = Path("configs/subscription.yaml")
 LOCAL_CONFIG_PATH = Path("configs/subscription.local.yaml")
 RUNTIME_OUTPUT_DIR = Path("outputs")
+DEFAULT_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
+DEFAULT_KEYWORD = "United States"
 
 HEADERS = {
     "User-Agent": "ClashForWindows/0.20.39",
@@ -346,7 +350,33 @@ def _dump_yaml_text(data: dict) -> str:
     return yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
-def build_clash_config(name_keyword: str = "United States") -> dict:
+def read_update_interval_seconds() -> int:
+    """
+    Read update interval from env var.
+    Supports UPDATE_INTERVAL_HOURS (preferred) or UPDATE_INTERVAL_SECONDS.
+    """
+    interval_seconds = os.getenv("UPDATE_INTERVAL_SECONDS", "").strip()
+    if interval_seconds:
+        try:
+            value = int(interval_seconds)
+            if value > 0:
+                return value
+        except ValueError:
+            pass
+
+    interval_hours = os.getenv("UPDATE_INTERVAL_HOURS", "").strip()
+    if interval_hours:
+        try:
+            hours = float(interval_hours)
+            if hours > 0:
+                return int(hours * 60 * 60)
+        except ValueError:
+            pass
+
+    return DEFAULT_UPDATE_INTERVAL_SECONDS
+
+
+def build_clash_config(name_keyword: str = DEFAULT_KEYWORD) -> dict:
     """
     Fetch upstream subscription and build final Clash config dict.
     Also persists intermediate/output files for traceability.
@@ -383,6 +413,74 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
     from flask import Flask, Response, jsonify, request
 
     app = Flask(__name__)
+    refresh_lock = threading.Lock()
+    refresh_state = {"last_success_at": 0.0, "last_keyword": ""}
+    output_path = RUNTIME_OUTPUT_DIR / "self_proxy_us_full.yaml"
+    update_interval_seconds = read_update_interval_seconds()
+
+    def _read_cached_config() -> dict | None:
+        if not output_path.exists():
+            return None
+        try:
+            data = read_yaml_file(output_path)
+            return data if isinstance(data, dict) else None
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _refresh_config(keyword: str) -> dict:
+        config = build_clash_config(name_keyword=keyword)
+        refresh_state["last_success_at"] = time.time()
+        refresh_state["last_keyword"] = keyword
+        return config
+
+    def _refresh_if_needed(keyword: str, force: bool = False) -> dict:
+        now = time.time()
+        is_stale = (now - refresh_state["last_success_at"]) >= update_interval_seconds
+        keyword_changed = refresh_state["last_keyword"] != keyword
+        cached_config = _read_cached_config()
+        if not force and cached_config is not None and not is_stale and not keyword_changed:
+            return cached_config
+        with refresh_lock:
+            now = time.time()
+            is_stale = (now - refresh_state["last_success_at"]) >= update_interval_seconds
+            keyword_changed = refresh_state["last_keyword"] != keyword
+            cached_config = _read_cached_config()
+            if not force and cached_config is not None and not is_stale and not keyword_changed:
+                return cached_config
+            return _refresh_config(keyword)
+
+    def _cache_is_stale() -> bool:
+        return (time.time() - refresh_state["last_success_at"]) >= update_interval_seconds
+
+    def _trigger_async_refresh(keyword: str, force: bool = False):
+        # Never block request path; skip if a refresh is already running.
+        if refresh_lock.locked():
+            return
+
+        def _worker():
+            try:
+                _refresh_if_needed(keyword, force=force)
+            except Exception as e:  # noqa: BLE001
+                print(f"[!] Async refresh failed: {e}")
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _background_refresh_loop():
+        # Keep outputs fresh even when nobody hits the endpoint.
+        while True:
+            try:
+                _refresh_if_needed(DEFAULT_KEYWORD)
+            except Exception as e:  # noqa: BLE001
+                print(f"[!] Background refresh failed: {e}")
+            sleep_seconds = max(30, min(update_interval_seconds, 300))
+            time.sleep(sleep_seconds)
+
+    # Prime cache once on startup (best-effort), then start background refresh worker.
+    try:
+        _refresh_if_needed(DEFAULT_KEYWORD, force=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"[!] Initial refresh failed: {e}")
+    threading.Thread(target=_background_refresh_loop, daemon=True).start()
 
     @app.get("/health")
     def health():
@@ -391,7 +489,7 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
     @app.get("/")
     @app.get("/subscription.yaml")
     def subscription_yaml():
-        keyword = request.args.get("keyword", "United States")
+        keyword = request.args.get("keyword", DEFAULT_KEYWORD)
         query_token = request.args.get("token", "")
         auth_header = request.headers.get("Authorization", "")
         header_token = ""
@@ -404,7 +502,20 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
             if not provided_token or not secrets.compare_digest(provided_token, expected_token):
                 return jsonify({"error": "unauthorized"}), 401
 
-            config = build_clash_config(name_keyword=keyword)
+            config = _read_cached_config()
+            if config is None:
+                _trigger_async_refresh(keyword, force=True)
+                return jsonify(
+                    {
+                        "error": "cache_not_ready",
+                        "message": "Cached rules are warming up. Please retry shortly.",
+                    }
+                ), 503
+
+            # Serve cached rules immediately; refresh happens in background only.
+            if _cache_is_stale() or refresh_state["last_keyword"] != keyword:
+                _trigger_async_refresh(keyword)
+
             body = _dump_yaml_text(config)
             return Response(
                 body,
@@ -417,6 +528,7 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
     print(f"[+] Flask service running at http://{host}:{port}")
     print("[+] Endpoints: /subscription.yaml  /health")
     print("[+] Auth: Authorization: Bearer <access_token> (or ?token=...)")
+    print(f"[+] Auto refresh interval: {update_interval_seconds}s")
     print("[+] Example: /subscription.yaml?keyword=United%20States")
     app.run(host=host, port=port, debug=False)
 
@@ -428,7 +540,7 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Service port (default: 8000)")
     parser.add_argument(
         "--keyword",
-        default="United States",
+        default=DEFAULT_KEYWORD,
         help='Proxy name filter keyword when generating config (default: "United States")',
     )
     args = parser.parse_args()
