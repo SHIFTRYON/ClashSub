@@ -6,6 +6,7 @@ and can generate merged Clash configs.
 """
 
 import json
+import secrets
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -36,6 +37,15 @@ def get_sub_url(config_path: str = "configs/subscription.yaml") -> str:
     if not isinstance(sub_url, str) or not sub_url.strip():
         raise ValueError("Invalid 'sub_url' in config; expected non-empty string.")
     return sub_url.strip()
+
+
+def get_access_token(config_path: str = "configs/subscription.yaml") -> str:
+    """Read access token for protecting public subscription endpoint."""
+    runtime_cfg = load_runtime_config(config_path)
+    token = runtime_cfg.get("access_token")
+    if not isinstance(token, str) or not token.strip():
+        raise ValueError("Invalid 'access_token' in config; expected non-empty string.")
+    return token.strip()
 
 
 def ensure_parent_dir(path: str | Path):
@@ -357,7 +367,18 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
     @app.get("/subscription.yaml")
     def subscription_yaml():
         keyword = request.args.get("keyword", "United States")
+        query_token = request.args.get("token", "")
+        auth_header = request.headers.get("Authorization", "")
+        header_token = ""
+        if auth_header.lower().startswith("bearer "):
+            header_token = auth_header[7:].strip()
+        provided_token = header_token or query_token
+
         try:
+            expected_token = get_access_token("configs/subscription.yaml")
+            if not provided_token or not secrets.compare_digest(provided_token, expected_token):
+                return jsonify({"error": "unauthorized"}), 401
+
             config = build_clash_config(name_keyword=keyword)
             body = _dump_yaml_text(config)
             return Response(
@@ -370,6 +391,7 @@ def run_web_service(host: str = "0.0.0.0", port: int = 8000):
 
     print(f"[+] Flask service running at http://{host}:{port}")
     print("[+] Endpoints: /subscription.yaml  /health")
+    print("[+] Auth: Authorization: Bearer <access_token> (or ?token=...)")
     print("[+] Example: /subscription.yaml?keyword=United%20States")
     app.run(host=host, port=port, debug=False)
 
