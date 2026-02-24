@@ -185,7 +185,7 @@ proxy-groups:
     type: select
     proxies:
       - DIRECT
-      - 🔰国外流量
+      - 🔰 国外流量
 
   - name: 🛑 全球拦截
     type: select
